@@ -20,10 +20,10 @@ require '../load.php';
 $item = Item::getByUID( @ $_GET['uid'] )->getRow('Item');
 
 if( $item ) {
-	$item->properties = $item->getItemProperties()->selectField( [
+	$item->properties = $item->getItemSpecifications()->selectField( [
 		'property_uid',
-		'reference_value'
-	] )->getResults('ReferenceProperty');
+		'spec_value'
+	] )->getResults('SpecProperty');
 
 	$item->contains = $item->getItemsContained()->selectField( [
 		'item_ID',
@@ -32,10 +32,10 @@ if( $item ) {
 
 	// Second level
 	foreach($item->contains as $contain) {
-		$contain->properties = $contain->getItemProperties()->selectField( [
+		$contain->properties = $contain->getItemSpecifications()->selectField( [
 			'property_uid',
-			'reference_value'
-		] )->getResults('ReferenceProperty');
+			'spec_value'
+		] )->getResults('SpecProperty');
 
 		$contain->contains = $contain->getItemsContained()->selectField( [
 			'item_uid'

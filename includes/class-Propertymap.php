@@ -1,5 +1,5 @@
 <?php
-# T.A.R.A.L.L.O. - Boz-PHP configuration
+# T.A.R.A.L.L.O. - Propertymap
 # Copyright (C) 2016 Ludovico Pavesi, Valerio Bozzolan
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,24 +15,35 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-defined('ABSPATH') || exit;
+trait PropertymapTrait {
+	/*
+	var $propertymap_parent;
+	var $propertymap_child;
+	*/
+}
 
-define('INCLUDES', 'includes');
-define('STITIC'  , 'static');
+class_exists('Property');
 
-define('SESSIONUSER_CLASS', 'User');
+class Propertymap {
+	use PropertymapTrait;
+	use PropertyTrait;
 
-// Autoload classes
-spl_autoload_register( function($c) {
-	$path = ABSPATH . __ . INCLUDES . __ . "class-$c.php";
-	if( is_file( $path ) ) {
-		require $path;
+	function __construct() {
+		self::normalize($this);
+		Property::normalize($this);
 	}
-} );
 
-register_js('asd-js', ROOT . _ . STITIC . _ . 'asd-js.js');
+	static function normalize($t) {
+		if( isset( $t->propertymap_parent ) ) {
+			$t->propertymap_parent = (int) $t->propertymap_parent;
+		}
+		if( isset( $t->propertymap_child ) ) {
+			$t->propertymap_child  = (int) $t->propertymap_child;
+		}
+	}
 
-add_menu_entries( [
-	new MenuEntry('login', ROOT . '/login.php', _("Login") ),
-	new MenuEntry('home',  ROOT               , _("Home") )
-] );
+	static function get() {
+		$q = new DinamicQuery();
+		return $q->useTable('propertymap');
+	}
+}

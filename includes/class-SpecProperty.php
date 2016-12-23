@@ -1,5 +1,5 @@
 <?php
-# T.A.R.A.L.L.O. - Boz-PHP configuration
+# T.A.R.A.L.L.O. - Join between spec and property
 # Copyright (C) 2016 Ludovico Pavesi, Valerio Bozzolan
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,24 +15,21 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-defined('ABSPATH') || exit;
+class_exists('Spec');
+class_exists('Property');
 
-define('INCLUDES', 'includes');
-define('STITIC'  , 'static');
+class SpecProperty {
+	use SpecTrait;
+	use PropertyTrait;
 
-define('SESSIONUSER_CLASS', 'User');
-
-// Autoload classes
-spl_autoload_register( function($c) {
-	$path = ABSPATH . __ . INCLUDES . __ . "class-$c.php";
-	if( is_file( $path ) ) {
-		require $path;
+	function __construct() {
+		Spec::normalize($this);
+		Property::normalize($this);
 	}
-} );
 
-register_js('asd-js', ROOT . _ . STITIC . _ . 'asd-js.js');
-
-add_menu_entries( [
-	new MenuEntry('login', ROOT . '/login.php', _("Login") ),
-	new MenuEntry('home',  ROOT               , _("Home") )
-] );
+	static function get() {
+		return Spec::get()->useTable('property')->appendCondition(
+			'spec.property_ID = property.property_ID'
+		);
+	}
+}

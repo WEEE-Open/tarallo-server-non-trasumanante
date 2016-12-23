@@ -33,16 +33,16 @@ trait ItemTrait {
 		return $this->item_ID;
 	}
 
-	function getItemProperties() {
-		return ReferenceProperty::get()->appendCondition( sprintf(
-			'reference.item_ID = %d',
+	function getItemSpecifications() {
+		return SpecProperty::get()->appendCondition( sprintf(
+			'spec.item_ID = %d',
 			$this->getItemID()
 		) );
 	}
 
 	function getItemsContained() {
-		$q = Location::getByContainer( $this->getItemID() )->useTable('item');
-		return $q->appendCondition('item.item_ID = item');
+		$q = Itemmap::getByContainer( $this->getItemID() )->useTable('item');
+		return $q->appendCondition('itemmap_subject = item.item_ID');
 	}
 }
 

@@ -1,5 +1,5 @@
 <?php
-# T.A.R.A.L.L.O. - Reference
+# T.A.R.A.L.L.O. - Itemmap
 # Copyright (C) 2016 Ludovico Pavesi, Valerio Bozzolan
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,27 +15,53 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-trait ReferenceTrait {
-	var $reference_value;
+trait ItemmapTrait {
+	/*
+	var $itemmap_ID;
+	var $itemmap_subject;
+	var $itemmap_container;
+	var $itemmap_creation_user;
+	var $itemmap_creation_date;
+	var $itemmap_formal_user;
+	var $itemmap_formal_date;
+	var $itemmap_parent;
+	*/
 
-	function getReferenceValue() {
-		return $this->reference_value;
+	/**
+	 * Force having the itemmap_ID.
+	 *
+	 * @return int
+	 */
+	function getItemmapID() {
+		isset( $this->itemmap_ID )
+			|| error_die("Missing itemmap_ID");
+
+		return $this->itemmap_ID;
 	}
 }
 
-class Reference {
-	use ReferenceTrait;
+class Itemmap {
+	use ItemmapTrait;
 
 	function __construct() {
-
+		self::normalize($this);
 	}
 
-	static function normalize() {
-		// Ehm OK
+	static function normalize($t) {
+		if( isset( $t->itemmap_ID ) ) {
+			$t->itemmap_ID = (int) $t->itemmap_ID;
+		}
 	}
 
 	static function get() {
 		$q = new DynamicQuery();
-		return $q->useTable('reference');
+		return $q->useTable('itemmap');
+	}
+
+	static function getByContainer($container_ID) {
+		return self::get()->appendCondition( sprintf(
+			'itemmap_container = %d',
+			$container_ID
+		) );
 	}
 }

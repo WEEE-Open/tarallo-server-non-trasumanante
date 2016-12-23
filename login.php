@@ -1,5 +1,5 @@
 <?php
-# T.A.R.A.L.L.O. - Reference
+# T.A.R.A.L.L.O. - Login page
 # Copyright (C) 2016 Ludovico Pavesi, Valerio Bozzolan
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,21 +15,29 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-class_exists('Reference');
-class_exists('Property');
+require 'load.php';
 
-class ReferenceProperty {
-	use ReferenceTrait;
-	use PropertyTrait;
+login();
 
-	function __construct() {
-		Reference::normalize($this);
-		Property::normalize($this);
-	}
+new Header('login');
 
-	static function get() {
-		return Reference::get()->useTable('property')->appendCondition(
-			'reference.property_ID = property.property_ID'
-		);
-	}
-}
+?>
+
+	<?php if( is_logged() ): ?>
+		<p><?php _e("Tarallizzato.") ?></p>
+	<?php else: ?>
+		<form method="post">
+			<p>
+				<input type="text" name="user_uid" />
+			</p>
+			<p>
+				<input type="password" name="user_password" />
+			</p>
+			<p>
+				<button type="submit"><?php _e("Login") ?></button>
+			</p>
+		</form>
+	<?php endif ?>
+
+<?php
+new Footer();

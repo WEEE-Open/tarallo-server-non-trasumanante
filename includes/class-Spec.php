@@ -1,5 +1,5 @@
 <?php
-# T.A.R.A.L.L.O. - Item with Location
+# T.A.R.A.L.L.O. - Spec
 # Copyright (C) 2016 Ludovico Pavesi, Valerio Bozzolan
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,21 +15,43 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-class_exists('Item');
-class_exists('Location');
+trait SpecTrait {
+	/*
+	var $spec_value;
+	var $spec_creation_user;
+	var $spec_creation_date;
+	var $item_ID;
+	var $property_ID;
+	 */
 
-class ItemLocation {
-	use ItemTrait;
-	use LocationTrait;
+	/**
+	 * @return bool
+	 */
+	function hasSpecValue() {
+		property_exists($this, 'spec_value')
+			|| error_die("Unset spec_value");
+
+		return isset( $this->spec_value );
+	}
+
+	function getSpecValue() {
+		return $this->spec_value;
+	}
+}
+
+class Spec {
+	use SpecTrait;
 
 	function __construct() {
-		Item::normalize($this);
-		Location::normalize($this);
+		// Ehm... boh.
+	}
+
+	static function normalize() {
+		// Ehm... boh.
 	}
 
 	static function get() {
 		$q = new DynamicQuery();
-		$q->useTable([ 'location', 'item' ]);
-		return $q->appendCondition('location.location_ID = item.item_ID');
+		return $q->useTable('spec');
 	}
 }
