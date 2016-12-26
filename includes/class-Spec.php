@@ -54,4 +54,42 @@ class Spec {
 		$q = new DynamicQuery();
 		return $q->useTable('spec');
 	}
+
+	static function canEditAll() {
+		return has_permission('edit-all-spec');
+	}
+
+	static function insert($property_ID, $item_ID, $value) {
+		$myself = get_user()->getUserID();
+
+		insert_row('spec',
+			new DBCol('spec_value',         $value,       'snull'),
+			new DBCol('spec_creation_user', $myself,      'd'),
+			new DBCol('spec_lastedit_user', $myself,      'd'),
+			new DBCol('spec_creation_date', 'NOW()',      '-'),
+			new DBCol('spec_lastedit_date', 'NOW()',      '-'),
+			new DBCol('property_ID',        $property_ID, 'd'),
+			new DBCol('item_ID',            $item_ID,     'd')
+		);
+
+		return last_inserted_ID();
+	}
+
+	static function update($property_ID, $item_ID, $value) {
+		$myself = get_user()->getUserID();
+
+		query_update('spec',
+			[
+				new DBCol('spec_value',         $value,  'snull'),
+				new DBCol('spec_lastedit_user', $myself, 'd'),
+				new DBCol('spec_lastedit_date', 'NOW()', '-')
+			],
+			// Where
+			sprintf(
+				"property_ID = %d AND item_ID = %d",
+				$property_ID,
+				$item_ID
+			)
+		);
+	}
 }

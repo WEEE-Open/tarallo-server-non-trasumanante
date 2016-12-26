@@ -25,54 +25,112 @@ new Header('home');
 	<input type="text" name="uid" placeholder="poli" id="item-uid" />
 	<button type="button" id="item-search"><?php _e("Get") ?></button>
 
-	<div id="item"></div>
+	<pre id="item"></pre>
 
 	<script>
-	var $uid        = $asd.id('item-uid');
-	var $item       = $asd.id('item');
+	var $s    = $asd.id('item-search');
+	var $uid  = $asd.id('item-uid');
+	var $item = $asd.id('item');
 
-	function getHTMLa(href, text) {
+	function taralloItem(item, level) {
 		var $a = $asd.el('a');
-		$a.appendChild( document.createTextNode(text) );
-		$a.href = href;
-		return $a;
-	}
-
-	function getHTMLProperty(p, level) {
-		var $p = $asd.el('p');
-		$p.textContent = repeat(level, '-+') + "[" + p.property_uid + "] = " + p.spec_value;
-		return $p;
-	}
-
-	function getHTMLItem(i, level) {
-		var $p = $asd.el('p');
-		var $a = getHTMLa('#', repeat(level, '-') + i.item_uid );
+		$a.href = '#';
+		$a.appendChild( $asd.text(
+			item.item_uid
+		) );
 		$a.onclick = function () {
-			$uid.value = i.item_uid;
-			api(i.item_uid);
+			api(item.item_uid, {hash: true} );
 			return false;
 		};
-		$p.appendChild($a);
+
+		var $p = $asd.p( repeat(level, '-') );
+		$p.appendChild( $a );
 		return $p;
 	}
 
-	function api(uid) {
+	function taralloProperty(spec, item, level) {
+		var item_uid     = item.item_uid;
+		var property_uid = spec.property_uid;
+		var spec_value   = spec.spec_value;
+
+		// Property uid label
+		$p = $asd.p( repeat(level, '-+') );
+		$p.appendChild( $asd.text(
+			"[" + property_uid + "] = "
+		) );
+
+		// Spec value label
+		var $v = $asd.input('text', spec_value);
+		$p.appendChild( $v );
+
+		// Save button
+		var $b = $asd.input('button', "Save");
+		$b.disabled = 'disabled';
+		$b.onclick = function (e) {
+			save_spec(item_uid, property_uid, $v.value, function (asd) {
+				$b.disabled = 'disabled';
+			} );
+		};
+
+		// Save button abilitation on value click
+		$v.onclick = function () {
+			$b.disabled = false;
+		};
+
+		$p.appendChild( $b );
+		return $p;
+	}
+
+	/**
+	 * Retrieve an item
+	 *
+	 * @param string uid
+	 * @param [] args
+	 * @param callback success
+	 */
+	function api(uid, args, success) {
 		$asd.ajax('/api/item.php', {uid: uid}, 'GET', function (json) {
+			if( ! json ) {
+				$item.textContent = 'none';
+				return;
+			}
+
+			if( args ) {
+				if( args.hash ) {
+					window.location.hash = uid;
+				}
+				if( args.input ) {
+					$uid.value = uid;
+				}
+			}
+
+			// Empty
 			$item.textContent = '';
 
-			$item.appendChild( getHTMLItem(json) );
+			$item.appendChild( taralloItem(json) );
 
 			for(var i=0; i<json.properties.length; i++) {
-				$item.appendChild( getHTMLProperty( json.properties[i] ) );
+				$item.appendChild( taralloProperty( json.properties[i], json ) );
 			}
 
 			// Contains
 			for(var i=0; i<json.contains.length; i++) {
-				$item.appendChild( getHTMLItem( json.contains[i], 2 ) );
+				$item.appendChild( taralloItem( json.contains[i], 2 ) );
 				for(var j=0; j<json.contains[i].properties.length; j++) {
-					$item.appendChild( getHTMLProperty( json.contains[i].properties[j], 2 ) );
+					$item.appendChild( taralloProperty( json.contains[i].properties[j], json, 2 ) );
 				}
 			}
+		} );
+	};
+
+	function save_spec(item, property, value, success) {
+		var data = {
+			item: item,
+			property: property,
+			value: value
+		};
+		$asd.ajax('/api/set-spec.php', data, 'POST', function (json) {
+			success && success(json);
 		} );
 	};
 
@@ -82,14 +140,19 @@ new Header('home');
 		for(var i=0; i<n; i++) {
 			s += c;
 		}
-		return s;
+		return s + ' ';
 	}
 
-	$asd.id('item-search').onclick = function (e) {
-		api( $uid.value );
+	$s.onclick = function (e) {
+		api( $uid.value, {hash: true} );
 		return false;
-	}
-	</script>
+	};
 
+	// ready
+	( function () {
+		var item = window.location.hash.substr(1);
+		item && api(item, {input: true, hash: true} );
+	} )();
+	</script>
 <?php
 new Footer();

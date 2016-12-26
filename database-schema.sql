@@ -31,18 +31,6 @@ CREATE TABLE `asd_item` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `asd_item`
---
-
-LOCK TABLES `asd_item` WRITE;
-/*!40000 ALTER TABLE `asd_item` DISABLE KEYS */;
-INSERT INTO `asd_item` VALUES (1,'chernobyl');
-INSERT INTO `asd_item` VALUES (3,'poli');
-INSERT INTO `asd_item` VALUES (2,'table1');
-/*!40000 ALTER TABLE `asd_item` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `asd_itemmap`
 --
 
@@ -75,16 +63,6 @@ CREATE TABLE `asd_itemmap` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `asd_itemmap`
---
-
-LOCK TABLES `asd_itemmap` WRITE;
-/*!40000 ALTER TABLE `asd_itemmap` DISABLE KEYS */;
-INSERT INTO `asd_itemmap` VALUES (1,1,3,1,'0000-00-00 00:00:00',1,'0000-00-00 00:00:00',NULL);
-/*!40000 ALTER TABLE `asd_itemmap` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `asd_property`
 --
 
@@ -99,18 +77,6 @@ CREATE TABLE `asd_property` (
   UNIQUE KEY `property_uid` (`property_uid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Sort of categories';
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `asd_property`
---
-
-LOCK TABLES `asd_property` WRITE;
-/*!40000 ALTER TABLE `asd_property` DISABLE KEYS */;
-INSERT INTO `asd_property` VALUES (1,'name','Name');
-INSERT INTO `asd_property` VALUES (2,'capacity','capacità');
-INSERT INTO `asd_property` VALUES (3,'ram','RAM');
-/*!40000 ALTER TABLE `asd_property` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `asd_propertymap`
@@ -130,16 +96,6 @@ CREATE TABLE `asd_propertymap` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `asd_propertymap`
---
-
-LOCK TABLES `asd_propertymap` WRITE;
-/*!40000 ALTER TABLE `asd_propertymap` DISABLE KEYS */;
-INSERT INTO `asd_propertymap` VALUES (3,2);
-/*!40000 ALTER TABLE `asd_propertymap` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `asd_spec`
 --
 
@@ -150,27 +106,22 @@ CREATE TABLE `asd_spec` (
   `spec_value` text COLLATE utf8mb4_unicode_ci COMMENT 'Property value',
   `spec_creation_user` int(10) unsigned NOT NULL COMMENT 'User who created this entry',
   `spec_creation_date` datetime NOT NULL COMMENT 'Creation date',
+  `spec_lastedit_user` int(10) unsigned NOT NULL,
+  `spec_lastedit_date` datetime NOT NULL,
   `item_ID` int(10) unsigned NOT NULL COMMENT 'Subject item',
   `property_ID` int(10) unsigned NOT NULL COMMENT 'Property applied',
   PRIMARY KEY (`item_ID`,`property_ID`),
-  KEY `property_ID` (`property_ID`),
   KEY `spec_creation_user` (`spec_creation_user`),
-  CONSTRAINT `asd_spec_ibfk_1` FOREIGN KEY (`item_ID`) REFERENCES `asd_item` (`item_ID`) ON DELETE CASCADE,
-  CONSTRAINT `asd_spec_ibfk_2` FOREIGN KEY (`property_ID`) REFERENCES `asd_property` (`property_ID`),
-  CONSTRAINT `asd_spec_ibfk_3` FOREIGN KEY (`spec_creation_user`) REFERENCES `asd_user` (`user_ID`)
+  KEY `spec_creation_date` (`spec_creation_date`),
+  KEY `property_ID` (`property_ID`),
+  KEY `spec_lastedit_user` (`spec_lastedit_user`),
+  KEY `spec_lastedit_date` (`spec_lastedit_date`),
+  CONSTRAINT `asd_spec_ibfk_3` FOREIGN KEY (`spec_creation_user`) REFERENCES `asd_user` (`user_ID`),
+  CONSTRAINT `asd_spec_ibfk_4` FOREIGN KEY (`item_ID`) REFERENCES `asd_item` (`item_ID`) ON DELETE CASCADE,
+  CONSTRAINT `asd_spec_ibfk_5` FOREIGN KEY (`property_ID`) REFERENCES `asd_property` (`property_ID`),
+  CONSTRAINT `asd_spec_ibfk_6` FOREIGN KEY (`spec_lastedit_user`) REFERENCES `asd_user` (`user_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Specification: Item with a property and an associated value';
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `asd_spec`
---
-
-LOCK TABLES `asd_spec` WRITE;
-/*!40000 ALTER TABLE `asd_spec` DISABLE KEYS */;
-INSERT INTO `asd_spec` VALUES ('Aula Chernobyl',1,'0000-00-00 00:00:00',1,1);
-INSERT INTO `asd_spec` VALUES ('Politecnico di Torino',1,'0000-00-00 00:00:00',3,1);
-/*!40000 ALTER TABLE `asd_spec` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `asd_user`
@@ -192,16 +143,6 @@ CREATE TABLE `asd_user` (
   UNIQUE KEY `user_uid` (`user_uid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Users and organizations';
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `asd_user`
---
-
-LOCK TABLES `asd_user` WRITE;
-/*!40000 ALTER TABLE `asd_user` DISABLE KEYS */;
-INSERT INTO `asd_user` VALUES (1,'asdman','admin',1,0,'Asd','Man','!');
-/*!40000 ALTER TABLE `asd_user` ENABLE KEYS */;
-UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -212,4 +153,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-12-22 22:50:19
+-- Dump completed on 2016-12-26 16:38:23

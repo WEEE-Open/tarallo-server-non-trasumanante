@@ -83,4 +83,8 @@ class Item {
 			esc_sql( luser_input( $uid, 32 ) )
 		) );
 	}
+
+	static function canEditAll() {
+		return has_permission('edit-all-item');
+	}
 }

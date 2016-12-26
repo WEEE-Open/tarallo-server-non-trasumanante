@@ -36,3 +36,9 @@ add_menu_entries( [
 	new MenuEntry('login', ROOT . '/login.php', _("Login") ),
 	new MenuEntry('home',  ROOT               , _("Home") )
 ] );
+
+
+register_permissions('admin', [
+	'edit-all-item',
+	'edit-all-spec'
+] );

@@ -17,13 +17,38 @@
 
 $asd = {};
 
-$asd.el    = function (el) { return document.createElement(el); };
 $asd.id    = function (id) { return document.getElementById(id); };
-$asd.class = function (c)  { return document.getElementByClass; };
+$asd.el    = function (el) { return document.createElement(el); };
+$asd.class = function (c)  { return document.getElementByClass(c); };
+$asd.text  = function (s)  { return document.createTextNode(s); };
+
+$asd.a = function (href, text) {
+	var $a = $asd.el('a');
+	if(text) {
+		$a.appendChild( $asd.text(text) );
+		$a.href = href;
+	}	
+	return $a;
+};
+
+$asd.p = function (text) {
+	$p = $asd.el('p');
+	text && $p.appendChild( $asd.text(text) );
+	return $p;
+};
+
+$asd.input = function (type, value) {
+	var $i = $asd.el('input');
+	$i.type = type;
+	if( value) {
+		$i.value = value;
+	}
+	return $i;
+};
 
 $asd.ajax = function (url, data, method, callback, error) {
-	var data     = data     || {};
-	var method   = method   || 'GET';
+	var data   = data   || {};
+	var method = method || 'GET';
 
 	var q = '';
 	for(key in data) {
@@ -32,10 +57,13 @@ $asd.ajax = function (url, data, method, callback, error) {
 		}
 		q = q + key + '=' + encodeURIComponent( data[key] );
 	}
+
 	if( method === 'GET' ) {
+		// in GET, data is part of the query string
 		url += '?' + q;
 		data = undefined;
 	} else if( method === 'POST' ) {
+		// in POST, data is encoded differently
 		data = q;
 	}
 
@@ -50,6 +78,11 @@ $asd.ajax = function (url, data, method, callback, error) {
 				error && error(xmlhttp);
 			}
 		}
+	}
+
+	if( method === 'POST' ) {
+		// Required in POST to encode data properly
+		xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
 	}
 
 	xmlhttp.send(data);
