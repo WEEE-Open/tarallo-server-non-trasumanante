@@ -84,11 +84,10 @@ new Header('home');
 	/**
 	 * Retrieve an item
 	 *
-	 * @param string uid
-	 * @param [] args
-	 * @param callback success
+	 * @param string item_uid
+	 * @param [] args {hash: bool, input: bool, succes: callback}
 	 */
-	function api(uid, args, success) {
+	function api(uid, args) {
 		$asd.ajax('/api/item.php', {uid: uid}, 'GET', function (json) {
 			if( ! json ) {
 				$item.textContent = 'none';
@@ -96,9 +95,11 @@ new Header('home');
 			}
 
 			if( args ) {
+				// Also update the hashtag?
 				if( args.hash ) {
 					window.location.hash = uid;
 				}
+				// Also update the input value?
 				if( args.input ) {
 					$uid.value = uid;
 				}
@@ -117,12 +118,19 @@ new Header('home');
 			for(var i=0; i<json.contains.length; i++) {
 				$item.appendChild( taralloItem( json.contains[i], 2 ) );
 				for(var j=0; j<json.contains[i].properties.length; j++) {
-					$item.appendChild( taralloProperty( json.contains[i].properties[j], json, 2 ) );
+					$item.appendChild( taralloProperty( json.contains[i].properties[j], json.contains[i], 2 ) );
 				}
 			}
+
+			args && args.success && args.success(json);
 		} );
 	};
 
+	/**
+	 * @param string item item_uid
+	 * @param string property property_uid
+	 * @param callback success
+	 */
 	function save_spec(item, property, value, success) {
 		var data = {
 			item: item,
@@ -130,10 +138,27 @@ new Header('home');
 			value: value
 		};
 		$asd.ajax('/api/set-spec.php', data, 'POST', function (json) {
-			success && success(json);
+			if( ! json.can ) {
+				console.log("Can't save spec");
+
+				if( json.can === null ) {
+					console.log("Are you logged?");
+				} else if( json.can === false ) {
+					console.log("Permission denied");
+				}
+			}
+			if( json.done ) {
+				console.log("Spec saved");
+				success && success(json);
+			} else {
+				console.log("Spec not saved");
+			}
 		} );
 	};
 
+	/**
+	 * Repeat `n` times the `s` string
+	 */
 	function repeat(n, c) {
 		n = n || 1;
 		var s = '';

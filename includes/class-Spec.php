@@ -37,17 +37,44 @@ trait SpecTrait {
 	function getSpecValue() {
 		return $this->spec_value;
 	}
+
+	/**
+	 * Editable when I've created this entry, or if I'm the spec administrator.
+	 *
+	 * @return bool
+	 */
+	function isSpecEditable() {
+		if( ! is_logged() ) {
+			return false;
+		}
+
+		return $this->getSpecCreationUserID() === get_user()->getUserID() || Spec::canEditAll();
+	}
+
+	/**
+	 * Assicure that the creation_user_ID was selected in the query, and return it.
+	 *
+	 * @return int
+	 */
+	function getSpecCreationUserID() {
+		isset( $this->spec_creation_user )
+			|| error_die("Missing spec_creation_user_ID");
+
+		return $this->spec_creation_user;
+	}
 }
 
 class Spec {
 	use SpecTrait;
 
 	function __construct() {
-		// Ehm... boh.
+		self::normalize( $this );
 	}
 
-	static function normalize() {
-		// Ehm... boh.
+	static function normalize($t) {
+		if( isset( $t->spec_creation_user ) ) {
+			$t->spec_creation_user = (int) $t->spec_creation_user;
+		}
 	}
 
 	static function get() {
@@ -78,15 +105,14 @@ class Spec {
 	static function update($property_ID, $item_ID, $value) {
 		$myself = get_user()->getUserID();
 
-		query_update('spec',
-			[
+		query_update('spec', [
 				new DBCol('spec_value',         $value,  'snull'),
 				new DBCol('spec_lastedit_user', $myself, 'd'),
 				new DBCol('spec_lastedit_date', 'NOW()', '-')
 			],
 			// Where
-			sprintf(
-				"property_ID = %d AND item_ID = %d",
+			$sql = sprintf(
+				'property_ID = %d AND item_ID = %d',
 				$property_ID,
 				$item_ID
 			)

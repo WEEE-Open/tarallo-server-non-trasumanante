@@ -18,7 +18,7 @@
 require '../load.php';
 
 // Can do this? (Unknown)
-$can = Spec::canEditAll();
+$can = null;
 
 // Message
 $msg = 'rtfm';
@@ -32,15 +32,32 @@ $done = false;
  * @param string $item item_uid
  * @param string $property property_uid
  */
-$api = function($item, $property, $value) use (& $msg) {
+$api = function($item, $property, $value) use (& $msg, & $can) {
+
 	// It exists yet?
 	$existing_spec = SpecPropertyItem::getByUID( $item, $property )->getRow('SpecPropertyItem');
 
 	if( $existing_spec ) {
-		// Update the already existing specification
+		// Update existing specification
+
+		// Has permission to edit this specific specification?
+		$can = $existing_spec->isSpecEditable();
+		if( ! $can ) {
+			$msg = 'cannot-update';
+			return false;
+		}
+
+		// Update the already existing specification value
 		$existing_spec->updateSpecValue( $value );
 	} else {
 		// Insert as a new specification
+
+		// Has permission to insert a new specification?
+		$can = Spec::canEditAll();
+		if( ! $can ) {
+			$msg = 'cannot-insert';
+			return false;
+		}
 
 		// Item exists?
 		$item_ID = Item::getByUID( $item )->getValue('item_ID');
@@ -72,9 +89,7 @@ if( isset( $_POST['item'], $_POST['property'] ) ) {
 		$value = $_POST['value'];
 	}
 
-	if( $can ) {
-		$done = $api( $_POST['item'], $_POST['property'], $value );
-	}
+	$done = $api( $_POST['item'], $_POST['property'], $value );
 }
 
 http_json_header();
