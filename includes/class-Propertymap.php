@@ -43,7 +43,16 @@ class Propertymap {
 	}
 
 	static function get() {
-		$q = new DinamicQuery();
+		$q = new DynamicQuery();
 		return $q->useTable('propertymap');
+	}
+
+	static function getByParentID($parent_ID) {
+		$q = self::get()->useTable('property');
+		$q->appendCondition('propertymap_child = property.property_ID');
+		return $q->appendCondition( sprintf(
+			'propertymap_parent = %d',
+			$parent_ID
+		) );
 	}
 }

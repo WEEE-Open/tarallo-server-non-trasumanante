@@ -34,6 +34,14 @@ trait PropertyTrait {
 
 		return $this->property_ID;
 	}
+
+	function getPropertyName() {
+		return _( $this->property_name );
+	}
+
+	function getPropertyChildren() {
+		return Propertymap::getByParentID( $this->getPropertyID() );
+	}
 }
 
 class Property {
@@ -49,8 +57,19 @@ class Property {
 		}
 	}
 
+	static function filterUID($uid) {
+		return luser_input($uid, 64);
+	}
+
 	static function get() {
-		$q = new DinamicQuery();
+		$q = new DynamicQuery();
 		return $q->useTable('property');
+	}
+
+	static function getByUID($uid) {
+		return self::get()->appendCondition( sprintf(
+			"property_uid = '%s'",
+			esc_sql( self::filterUID( $uid ) )
+		) );
 	}
 }

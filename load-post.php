@@ -31,6 +31,7 @@ spl_autoload_register( function($c) {
 } );
 
 register_js('asd-js', ROOT . _ . STITIC . _ . 'asd-js.js');
+register_js('item',   ROOT . _ . STITIC . _ . 'item.js');
 
 add_menu_entries( [
 	new MenuEntry('login', ROOT . '/login.php', _("Login") ),

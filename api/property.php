@@ -1,6 +1,6 @@
 <?php
 # T.A.R.A.L.L.O. - API
-# Copyright (C) 2016 Ludovico Pavesi, Valerio Bozzolan
+# Copyright (C) 2016 Valerio Bozzolan
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -17,27 +17,25 @@
 
 require '../load.php';
 
-$item = Item::getByUID( @ $_GET['uid'] )
+$property = Property::getByUID( @ $_GET['uid'] )
 	->selectField( [
-		'item_ID',
-		'item_uid'
-	] )
-	->getRow('Item');
-
-if( $item ) {
-	$item->specifications = $item->getItemSpecifications()->selectField( [
+		'property_ID',
 		'property_uid',
-		'property_name',
-		'spec_value'
-	] )->getResults('SpecProperty');
+		'property_name'
+	] )
+	->getRow('Property');
 
-	$item->contains = $item->getItemsContained()->selectField( [
-		'item_uid'
-	] )->getResults('Item');
+if( $property ) {
+	$property->suggested = $property
+		->getPropertyChildren()
+		->selectField( [
+			'property_uid',
+			'property_name'
+		] )
+		->getResults('Property');
 
-	// Now unused
-	unset( $item->item_ID );
+	unset( $property->property_ID );
 }
 
 http_json_header();
-echo json_encode($item, JSON_PRETTY_PRINT);
+echo json_encode($property, JSON_PRETTY_PRINT);

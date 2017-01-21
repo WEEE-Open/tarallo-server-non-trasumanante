@@ -87,3 +87,11 @@ $asd.ajax = function (url, data, method, callback, error) {
 
 	xmlhttp.send(data);
 };
+
+function set_anchor(anchor) {
+	window.location.hash = '#' + anchor;
+}
+
+function get_anchor() {
+	return window.location.hash.substr(1);
+}
