@@ -42,6 +42,10 @@ trait PropertyTrait {
 	function getPropertyChildren() {
 		return Propertymap::getByParentID( $this->getPropertyID() );
 	}
+
+	function getPropertyParent() {
+		return Propertymap::getByChildrenID( $this->getPropertyID() );
+	}
 }
 
 class Property {

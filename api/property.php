@@ -26,12 +26,14 @@ $property = Property::getByUID( @ $_GET['uid'] )
 	->getRow('Property');
 
 if( $property ) {
-	$property->suggested = $property
+	$property->parent = $property
+		->getPropertyParent()
+		->selectField('property_uid')
+		->getResults('Property');
+
+	$property->children = $property
 		->getPropertyChildren()
-		->selectField( [
-			'property_uid',
-			'property_name'
-		] )
+		->selectField('property_uid')
 		->getResults('Property');
 
 	unset( $property->property_ID );

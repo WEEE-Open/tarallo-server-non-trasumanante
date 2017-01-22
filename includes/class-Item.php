@@ -84,7 +84,17 @@ class Item {
 		) );
 	}
 
+	static function canInsert() {
+		return has_permission('insert-item');
+	}
+
 	static function canEditAll() {
 		return has_permission('edit-all-item');
+	}
+
+	static function insert($item_uid) {
+		insert_row('item', [
+			new DBCol('item_uid', $item_uid, 's')
+		] );
 	}
 }

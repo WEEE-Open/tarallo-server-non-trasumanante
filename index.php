@@ -29,6 +29,8 @@ new Header('home');
 	<pre id="item"></pre>
 
 	<script>
+	var INDEX     = '<?php echo ROOT ?>#';
+	var ITEM_API  = '<?php echo ITEM_API ?>';
 	var $s        = $asd.id('item-search');
 	var $item_uid = $asd.id('item-uid');
 	var $item     = $asd.id('item');
@@ -73,7 +75,7 @@ new Header('home');
 		var item = this;
 
 		var $a = $asd.el('a');
-		$a.href = '#';
+		$a.href = INDEX + this.getUID();
 		$a.appendChild( $asd.text(
 			this.getUID()
 		) );
@@ -84,7 +86,6 @@ new Header('home');
 				MAX_RECURSION += MAX_RECURSION_STEP;
 
 				if( CLEAR_ON_CLICK ) {
-					console.log( item );
 					set_anchor( item.getUID() );
 					$item_uid.value = item.getUID();
 					clear();
@@ -122,46 +123,64 @@ new Header('home');
 		}
 	}
 
+	Spec.prototype.print = function () {
+		// Property uid label
+		$p = $asd.p( repeat( this.getItem().countLevel(), '-+') );
+
+		this.getProperty().print( $p, this );
+		this.printSave(  $p );
+
+		$item.appendChild( $p );
+	};
+
+	Property.prototype.print = function ($p, spec) {
+		this.printLabel( $p, spec );
+		this.printValue( $p, spec );
+	};
+
+	Property.prototype.printLabel = function($p, spec) {
+		$p.appendChild( $asd.text( "[" + this.getUID() + "] = ") );
+	}
+
+	Property.prototype.printValue = function ($p, spec) {
+		spec.setInput( $asd.input('text', spec.getValue() ) );
+		$p.appendChild( spec.getInput() );
+	};
+
+	Spec.prototype.$input = null;
+	Spec.prototype.getInput = function () {
+		return this.$input;
+	};
+	Spec.prototype.setInput = function ($input) {
+		this.$input = $input;
+	};
+	Spec.prototype.getInputValue = function() {
+		return this.$input.value;
+	}
+
+	Spec.prototype.printSave = function ($p) {
+		var $b = $asd.input('button', "Save");
+		$b.disabled = 'disabled';
+
+		var spec = this;
+		$b.onclick = function (e) {
+			spec.setValue( spec.getInputValue() ).save( function () {
+				$b.disabled = 'disabled';
+			} );
+		};
+
+		// Save button abilitation on value click
+		this.getInput().onchange = function () {
+			$b.disabled = false;
+		};
+
+		$p.appendChild( $b );
+	};
+
 	Item.prototype.printSpec = function () {
-		var item = this;
-
-		var item_uid     = this.getUID();
-		var level        = this.countLevel();
-
-		var specs = item.getSpecifications()
+		var specs = this.getSpecifications();
 		for(var i=0; i<specs.length; i++) {
-			var spec = specs[i];
-
-			var property_uid = spec.getProperty().getUID();
-			var spec_value   = spec.getValue();
-
-			// Property uid label
-			$p = $asd.p( repeat( level, '-+') );
-			$p.appendChild( $asd.text(
-				"[" + property_uid + "] = "
-			) );
-
-			// Spec value label
-			var $v = $asd.input('text', spec_value);
-			$p.appendChild( $v );
-
-			// Save button
-			var $b = $asd.input('button', "Save");
-			$b.disabled = 'disabled';
-			$b.onclick = function (e) {
-				spec.setValue($v.value).save( function () {
-					$b.disabled = 'disabled';
-				} );
-			};
-
-			// Save button abilitation on value click
-			$v.onclick = function () {
-				$b.disabled = false;
-			};
-
-			$p.appendChild( $b );
-
-			$item.appendChild( $p );
+			specs[i].print();
 		}
 	}
 	</script>

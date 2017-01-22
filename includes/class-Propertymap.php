@@ -55,4 +55,13 @@ class Propertymap {
 			$parent_ID
 		) );
 	}
+
+	static function getByChildrenID($child_ID) {
+		$q = self::get()->useTable('property');
+		$q->appendCondition('propertymap_parent = property.property_ID');
+		return $q->appendCondition( sprintf(
+			'propertymap_child = %d',
+			$child_ID
+		) );
+	}
 }

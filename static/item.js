@@ -1,12 +1,17 @@
-var ITEM_API = '/api/item.php';
+var ITEM_API     = '/api/item.php';
+var PROPERTY_API = '/api/property.php';
 
 // Cache
 var items = {};
 var properties = {};
 
 /**
- * Everything is an item
- * /api/item.php?uid=poli
+ * Everything is an item.
+ *
+ * @param string uid Item UID
+ * @param [] specifications Array of Spec
+ * @param [] contains Array of Item
+ * @param Item parent Item parent
  */
 function Item(uid, specifications, contains, parent) {
 	this.uid            = uid;
@@ -23,10 +28,16 @@ function Item(uid, specifications, contains, parent) {
 	items[ uid ] = this;
 }
 
+/**
+ * @return string Item UID
+ */
 Item.prototype.getUID = function () {
 	return this.uid;
 }
 
+/**
+ * @return int Nesting level
+ */
 Item.prototype.countLevel = function () {
 	if( ! this.parent ) {
 		return 0;
@@ -34,26 +45,39 @@ Item.prototype.countLevel = function () {
 	return this.parent.countLevel() + 1;
 }
 
+/**
+ * @param Item parent Item parent
+ * @return Item this
+ */
 Item.prototype.setParent = function (parent) {
 	this.parent = parent;
 	return this;
 }
 
+/**
+ * Free this Item from his parent.
+ *
+ * @return Item this
+ */
 Item.prototype.clear = function () {
 	items = {};
 	this.parent = undefined;
 	return this;
 };
 
+/**
+ * @return [] Array of Spec
+ */
 Item.prototype.getSpecifications = function () {
 	return this.specifications;
 }
 
 /**
- * Retrieve an item
+ * Retrieve an Item from its UID.
  *
- * @param string item_uid
- * @param [] args {hash: bool, input: bool, succes: callback}
+ * @param string uid Item UID
+ * @param callback success AJAX success callback (called when all the properties are fetched)
+ * @param callback failure AJAX failure callback
  */
 Item.fetch = function (uid, success, failure) {
 	// Try from cache
@@ -71,19 +95,66 @@ Item.fetch = function (uid, success, failure) {
 		}
 
 		var specifications = [];
+		var found = 0;
 		for(var i=0; i<json.specifications.length; i++) {
 			var row = json.specifications[i];
-			var property = Property.get(row.property_uid, row.property_name);
-			specifications.push( new Spec(property, row.spec_value) );
+
+			Property.fetch(row.property_uid, function (property) {
+				specifications.push( new Spec(property, row.spec_value) );
+
+				found++;
+				if( found >= json.specifications.length ) {
+					success && success( new Item(json.item_uid, specifications, json.contains) );
+				}
+			} );
+		}
+	} );
+};
+
+/**
+ * Retrieve a Property from its UID.
+ *
+ * @param string uid Property UID
+ * @param callback success AJAX success callback
+ * @param callback failure AJAX failure callback
+ * @param Property parent Optional Property that is actually fetching a child
+ */
+Property.fetch = function (uid, success, failure, parent) {
+	// Try from cache
+	var property = properties[uid];
+	if( property ) {
+		success && success(property);
+		return;
+	}
+
+	$asd.ajax(PROPERTY_API, {uid: uid}, 'GET', function (json) {
+		if( ! json ) {
+			console.log('Not found property ' + uid);
+			failure && failure(uid);
+			return;
 		}
 
-		success && success( new Item(json.item_uid, specifications, json.contains) );
+		property = new Property(json.property_uid, json.property_name);
+
+		parent && parent.addParent(property);
+
+		// Fetch also all parent properties (N.B. NORMALLY IS ONE. I DON'T KNOW WHY IT SHOULD BE MORE THAN ONE.)
+		for(var i=0; i<json.parent.length; i++) {
+			Property.fetch(json.parent[i].property_uid, success, failure, property);
+		}
+
+		// This is the root property
+		if( ! json.parent.length ) {
+			success && success(property);
+		}
 	} );
 };
 
 function Property(uid, name) {
 	this.uid  = uid;
 	this.name = name;
+	this.parent = [];
+	this.child  = [];
 
 	if( ! properties[uid] ) {
 		properties[uid] = this;	
@@ -101,6 +172,11 @@ Property.get = function (uid, name) {
 
 Property.prototype.getUID = function () {
 	return this.uid;
+}
+
+Property.prototype.addParent = function(property) {
+	this.parent.push( property );
+	return this;
 }
 
 function Spec(property, value) {

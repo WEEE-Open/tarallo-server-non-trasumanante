@@ -27,7 +27,6 @@ $item = Item::getByUID( @ $_GET['uid'] )
 if( $item ) {
 	$item->specifications = $item->getItemSpecifications()->selectField( [
 		'property_uid',
-		'property_name',
 		'spec_value'
 	] )->getResults('SpecProperty');
 

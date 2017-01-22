@@ -20,6 +20,9 @@ defined('ABSPATH') || exit;
 define('INCLUDES', 'includes');
 define('STITIC'  , 'static');
 
+defined('ITEM_API')
+	|| define('ITEM_API', ROOT . '/api/item.php');
+
 define('SESSIONUSER_CLASS', 'User');
 
 // Autoload classes
@@ -38,8 +41,14 @@ add_menu_entries( [
 	new MenuEntry('home',  ROOT               , _("Home") )
 ] );
 
+register_permissions('mapper', [
+	'insert-item',
+	'edit-all-spec'
+] );
+
+inherit_permissions('admin', 'mapper');
 
 register_permissions('admin', [
 	'edit-all-item',
-	'edit-all-spec'
+	'edit-all-property'
 ] );
