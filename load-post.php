@@ -43,6 +43,7 @@ add_menu_entries( [
 
 register_permissions('mapper', [
 	'insert-item',
+	'insert-spec',
 	'edit-all-spec'
 ] );
 

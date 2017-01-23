@@ -46,11 +46,9 @@ new Header('home');
 	// Document ready
 	( function () {
 		var item_uid = get_anchor();
-		item_uid && Item.fetch(item_uid, function (item) {
-			if( item ) {
-				$item_uid.value = item.getUID();
-				item.print();
-			}
+		item_uid && Item.fetchByUID(item_uid, function (item) {
+			$item_uid.value = item.getUID();
+			item.print();
 		} );
 	} )();
 
@@ -60,20 +58,16 @@ new Header('home');
 
 	// Search button
 	$s.onclick = function (e) {
-		Item.fetch( $item_uid.value, function (item) {
-			if( item ) {
-				set_anchor( item.getUID() );
-				clear();
-				item.clear().print();
-			}
+		Item.fetchByUID( $item_uid.value, function (item) {
+			set_anchor( item.getUID() );
+			clear();
+			item.clear().print();
 		} );
 		return false;
 	};
 
 	Item.prototype.yetPrinted = false;
 	Item.prototype.print = function () {
-		var item = this;
-
 		var $a = $asd.el('a');
 		$a.href = INDEX + this.getUID();
 		$a.appendChild( $asd.text(
@@ -81,8 +75,9 @@ new Header('home');
 		) );
 
 		// URL click
+		var item = this;
 		$a.onclick = function () {
-			Item.fetch(item.getUID(), function (item) {
+			Item.fetchByUID(item.getUID(), function (item) {
 				MAX_RECURSION += MAX_RECURSION_STEP;
 
 				if( CLEAR_ON_CLICK ) {
@@ -109,15 +104,11 @@ new Header('home');
 		this.yetPrinted = true;
 
 		// Print childs
-		var parent = this;
 		if( this.countLevel() < MAX_RECURSION ) {
 			// Print childs recursively
-			for(var i=0; i<this.contains.length; i++) {
-				Item.fetch(this.contains[i].item_uid, function (item) {
-					item.setParent( parent );
-					item.print();
-				} );
-			}
+			this.eachContained( function (item) {
+				item.print();
+			} );
 		} else {
 			console.log("Too many levels automatically fetched");
 		}
@@ -128,14 +119,17 @@ new Header('home');
 		$p = $asd.p( repeat( this.getItem().countLevel(), '-+') );
 
 		this.getProperty().print( $p, this );
-		this.printSave(  $p );
 
 		$item.appendChild( $p );
 	};
 
 	Property.prototype.print = function ($p, spec) {
+		var propertyModule = PropertyModules[ this.getUID() ];
+		propertyModule && propertyModule(this);
+
 		this.printLabel( $p, spec );
 		this.printValue( $p, spec );
+		this.printSave( $p, spec );
 	};
 
 	Property.prototype.printLabel = function($p, spec) {
@@ -143,28 +137,39 @@ new Header('home');
 	}
 
 	Property.prototype.printValue = function ($p, spec) {
-		spec.setInput( $asd.input('text', spec.getValue() ) );
-		$p.appendChild( spec.getInput() );
+		this.setInputValue( spec.getValue() );
+		$p.appendChild( this.getInput() );
 	};
 
-	Spec.prototype.$input = null;
-	Spec.prototype.getInput = function () {
+	// Spec.prototype.$input = null;
+	Property.prototype.getInputType = function () {
+		return 'text';
+	};
+	Property.prototype.getInput = function () {
+		if( ! this.$input ) {
+			this.$input = $asd.input( this.getInputType() );
+		}
 		return this.$input;
 	};
-	Spec.prototype.setInput = function ($input) {
+	Property.prototype.setInput = function ($input) {
 		this.$input = $input;
+		return this;
 	};
-	Spec.prototype.getInputValue = function() {
-		return this.$input.value;
-	}
-
-	Spec.prototype.printSave = function ($p) {
-		var $b = $asd.input('button', "Save");
+	Property.prototype.getInputValue = function () {
+		return this.getInput().value;
+	};
+	Property.prototype.setInputValue = function (value) {
+		this.getInput().value = value;
+		return this;
+	};
+	Property.prototype.printSave = function ($p, spec) {
+		var $b = $asd.input('button', "<?php _esc_attr( _("Salva") ) ?>");
 		$b.disabled = 'disabled';
 
-		var spec = this;
+		var property = this;
 		$b.onclick = function (e) {
-			spec.setValue( spec.getInputValue() ).save( function () {
+			property.setInputValue( property.getInputValue() );
+			spec.setValue( property.getInputValue() ).save( function () {
 				$b.disabled = 'disabled';
 			} );
 		};
@@ -178,11 +183,21 @@ new Header('home');
 	};
 
 	Item.prototype.printSpec = function () {
-		var specs = this.getSpecifications();
-		for(var i=0; i<specs.length; i++) {
-			specs[i].print();
-		}
+		var specs = this.eachSpec( function(spec) {
+			spec.print();
+		} );
 	}
+
+	/**
+	 * Enhances some types of properties
+	 */
+	var PropertyModules = {};
+	PropertyModules.note = function (property) {
+		property.setInput( $asd.el('textarea') );
+	};
+	PropertyModules.capacity = function (property) {
+		property.setInputType('number');
+	};
 	</script>
 <?php
 new Footer();

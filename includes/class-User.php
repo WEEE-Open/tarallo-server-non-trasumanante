@@ -56,6 +56,17 @@ trait UserTrait {
 
 		return $this->user_active;
 	}
+
+	function getUserFullname() {
+		property_exists($this, 'user_displayname')
+			|| error_die("Missing user_displayname");
+
+		if( isset( $this->user_displayname ) ) {
+			return $this->user_displayname;
+		}
+
+		return sprintf("%s %s", $this->user_name, $this->user_surname);
+	}
 }
 
 class User extends Sessionuser {

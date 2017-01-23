@@ -30,9 +30,24 @@ if( $item ) {
 		'spec_value'
 	] )->getResults('SpecProperty');
 
-	$item->contains = $item->getItemsContained()->selectField( [
+	// We are a bit sure that we can't have more than one parent
+	$parent = $item->getContainerItem()->selectField( [
+		'item_uid'
+	] )->getRow('Item');
+
+	$item->parent = null;
+	if( $parent ) {
+		$item->parent = $parent->getItemUID();
+	}
+
+	$contains = $item->getContainedItems()->selectField( [
 		'item_uid'
 	] )->getResults('Item');
+
+	$item->contains = [];
+	foreach($contains as $contain) {
+		$item->contains[] = $contain->getItemUID();
+	}
 
 	// Now unused
 	unset( $item->item_ID );

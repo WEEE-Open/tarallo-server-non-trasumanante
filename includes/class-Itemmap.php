@@ -64,4 +64,11 @@ class Itemmap {
 			$container_ID
 		) );
 	}
+
+	static function getByContained($item_ID) {
+		return self::get()->appendCondition( sprintf(
+			'itemmap_contained = %d',
+			$item_ID
+		) );
+	}
 }

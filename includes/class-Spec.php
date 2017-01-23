@@ -86,6 +86,10 @@ class Spec {
 		return has_permission('edit-all-spec');
 	}
 
+	static function canInsert() {
+		return has_permission('insert-spec');
+	}
+
 	static function insert($property_ID, $item_ID, $value) {
 		$myself = get_user()->getUserID();
 

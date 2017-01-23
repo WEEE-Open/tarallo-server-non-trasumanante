@@ -33,6 +33,18 @@ trait ItemTrait {
 		return $this->item_ID;
 	}
 
+	/**
+	 * Force having the item_uid.
+	 *
+	 * @return string
+	 */
+	function getItemUID() {
+		isset( $this->item_uid )
+			|| error_die("Missing item_uid");
+
+		return $this->item_uid;
+	}
+
 	function getItemSpecifications() {
 		return SpecProperty::get()->appendCondition( sprintf(
 			'spec.item_ID = %d',
@@ -40,9 +52,16 @@ trait ItemTrait {
 		) );
 	}
 
-	function getItemsContained() {
-		$q = Itemmap::getByContainer( $this->getItemID() )->useTable('item');
-		return $q->appendCondition('itemmap_subject = item.item_ID');
+	function getContainedItems() {
+		return Itemmap::getByContainer( $this->getItemID() )
+			->useTable('item')
+			->appendCondition('itemmap_contained = item.item_ID');
+	}
+
+	function getContainerItem() {
+		return Itemmap::getByContained( $this->getItemID() )
+			->useTable('item')
+			->appendCondition('itemmap_container = item.item_ID');
 	}
 }
 

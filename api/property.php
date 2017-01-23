@@ -26,15 +26,25 @@ $property = Property::getByUID( @ $_GET['uid'] )
 	->getRow('Property');
 
 if( $property ) {
-	$property->parent = $property
+	$parents = $property
 		->getPropertyParent()
 		->selectField('property_uid')
 		->getResults('Property');
 
-	$property->children = $property
+	$property->parent = [];
+	foreach($parents as $parent) {
+		$property->parent[] = $parent->getPropertyUID();
+	}
+
+	$children = $property
 		->getPropertyChildren()
 		->selectField('property_uid')
 		->getResults('Property');
+
+	$property->children = [];
+	foreach($children as $child) {
+		$property->children[] = $child->getPropertyUID();
+	}
 
 	unset( $property->property_ID );
 }

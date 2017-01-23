@@ -35,6 +35,18 @@ trait PropertyTrait {
 		return $this->property_ID;
 	}
 
+	/**
+	 * Force having the property_uid.
+	 *
+	 * @return string
+	 */
+	function getPropertyUID() {
+		isset( $this->property_uid )
+			|| error_die("Missing property_uid");
+
+		return $this->property_uid;
+	}
+
 	function getPropertyName() {
 		return _( $this->property_name );
 	}

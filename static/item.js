@@ -13,19 +13,33 @@ var properties = {};
  * @param [] contains Array of Item
  * @param Item parent Item parent
  */
-function Item(uid, specifications, contains, parent) {
+function Item(uid, fetched) {
 	this.uid            = uid;
-	this.specifications = specifications;
-	this.contains       = contains;
-	this.parent         = parent;
-
-	// Useful reference
-	for(var i=0; i<this.specifications.length; i++) {
-		this.specifications[i].setItem(this);
-	}
+	this.fetched        = fetched || false;
+	this.parent         = null;
+	this.contains       = [];
+	this.specifications = [];
 
 	// Cache
 	items[ uid ] = this;
+}
+
+// Get or insert in cache
+Item.get = function (uid) {
+	var item = items[uid];
+	if( item ) {
+		return item;
+	}
+	return new Item(uid);
+};
+
+/**
+ * @param Item Item that is contained in this.
+ */
+Item.prototype.addContained = function (item) {
+	this.contains.push( item );
+	item.setParent( this );
+	return this;
 }
 
 /**
@@ -33,17 +47,24 @@ function Item(uid, specifications, contains, parent) {
  */
 Item.prototype.getUID = function () {
 	return this.uid;
-}
+};
+
+/**
+ * @param Spec
+ * @return Item this
+ */
+Item.prototype.addSpec = function (spec) {
+	spec.setItem(this);
+	this.specifications.push( spec );
+	return this;
+};
 
 /**
  * @return int Nesting level
  */
 Item.prototype.countLevel = function () {
-	if( ! this.parent ) {
-		return 0;
-	}
-	return this.parent.countLevel() + 1;
-}
+	return this.parent ? this.parent.countLevel() + 1 : 0;
+};
 
 /**
  * @param Item parent Item parent
@@ -52,7 +73,7 @@ Item.prototype.countLevel = function () {
 Item.prototype.setParent = function (parent) {
 	this.parent = parent;
 	return this;
-}
+};
 
 /**
  * Free this Item from his parent.
@@ -65,24 +86,21 @@ Item.prototype.clear = function () {
 	return this;
 };
 
-/**
- * @return [] Array of Spec
- */
-Item.prototype.getSpecifications = function () {
-	return this.specifications;
-}
+Item.prototype.fetch = function (success, failure) {
+	Item.fetchByUID( this.uid, success, failure );
+};
 
 /**
- * Retrieve an Item from its UID.
+ * Retrieve Item from its UID, full with all the specifications and properties.
  *
  * @param string uid Item UID
  * @param callback success AJAX success callback (called when all the properties are fetched)
  * @param callback failure AJAX failure callback
  */
-Item.fetch = function (uid, success, failure) {
+Item.fetchByUID = function (uid, success, failure) {
 	// Try from cache
 	var item = items[uid];
-	if( item ) {
+	if( item && item.fetched ) {
 		success && success(item);
 		return;
 	}
@@ -94,35 +112,90 @@ Item.fetch = function (uid, success, failure) {
 			return;
 		}
 
-		var specifications = [];
+		var item = Item.get( json.item_uid );
+
+		if(json.parent) {
+			item.setParent( Item.get(json.parent) );
+		}
+
+		for(var i=0; i<json.contains.length; i++) {
+			item.addContained( Item.get( json.contains[i] ) );
+		}
+
+		item.fetched = true;
+
 		var found = 0;
 		for(var i=0; i<json.specifications.length; i++) {
 			var row = json.specifications[i];
 
-			Property.fetch(row.property_uid, function (property) {
-				specifications.push( new Spec(property, row.spec_value) );
+			Property.fetchByUID( row.property_uid, function (property) {
+				var spec = new Spec(property, row.spec_value);
+
+				item.addSpec( spec );
 
 				found++;
 				if( found >= json.specifications.length ) {
-					success && success( new Item(json.item_uid, specifications, json.contains) );
+					success && success( item );
 				}
 			} );
+		}
+
+		if( ! json.specifications.length ) {
+			success && success( item );
 		}
 	} );
 };
 
 /**
- * Retrieve a Property from its UID.
+ * Do something for each item contained.
+ *
+ */
+Item.prototype.eachContained = function (success, failure) {
+	if( ! this.fetched ) {
+		var item = this;
+		this.fetch( function () {
+			item.eachContained(success, failure);
+		}, failure);
+		return;
+	}
+
+	for(var i=0; i<this.contains.length; i++) {
+		var item = this.contains[i];
+		item.fetch(function () {
+			success && success( item );
+		}, failure);
+	}
+}
+
+/**
+ * @return [] Array of Spec
+ */
+Item.prototype.eachSpec = function (success, failure) {
+	if( ! this.fetched ) {
+		var item = this;
+		this.fetch( function () {
+			item.eachSpec(success, failure);
+		}, failure);
+		return;
+	}
+
+	for(var i=0; i<this.specifications.length; i++) {
+		success && success( this.specifications[i] );
+	}
+};
+
+/**
+ * Retrieve a Property from its UID. It will reach the latest parent.
  *
  * @param string uid Property UID
  * @param callback success AJAX success callback
  * @param callback failure AJAX failure callback
  * @param Property parent Optional Property that is actually fetching a child
  */
-Property.fetch = function (uid, success, failure, parent) {
+Property.fetchByUID = function (uid, success, failure, parent) {
 	// Try from cache
-	var property = properties[uid];
-	if( property ) {
+	var property = properties[ uid ];
+	if( property && property.fetched ) {
 		success && success(property);
 		return;
 	}
@@ -134,50 +207,55 @@ Property.fetch = function (uid, success, failure, parent) {
 			return;
 		}
 
-		property = new Property(json.property_uid, json.property_name);
+		property = new Property(json.property_uid, json.property_name, true);
 
 		parent && parent.addParent(property);
 
-		// Fetch also all parent properties (N.B. NORMALLY IS ONE. I DON'T KNOW WHY IT SHOULD BE MORE THAN ONE.)
-		for(var i=0; i<json.parent.length; i++) {
-			Property.fetch(json.parent[i].property_uid, success, failure, property);
-		}
-
-		// This is the root property
-		if( ! json.parent.length ) {
-			success && success(property);
+		if( json.parent.length ) {
+			for(var i=0; i<json.parent.length; i++) {
+				Property.fetchByUID( json.parent[i], success, failure, property );
+			}
+		} else {
+			// Found the root property
+			success && success(parent || property);
 		}
 	} );
 };
 
-function Property(uid, name) {
+function Property(uid, name, fetched) {
 	this.uid  = uid;
 	this.name = name;
+	this.fetched = fetched || false;
 	this.parent = [];
-	this.child  = [];
+	this.children  = [];
 
 	if( ! properties[uid] ) {
 		properties[uid] = this;	
 	}
 }
 
+Property.prototype.fetch = function(success, failure, parent) {
+	Property.fetchByUID( this.uid, success, failure, parent);
+};
+
 // Get or insert in cache
 Property.get = function (uid, name) {
 	var property = properties[uid];
-	if( ! property ) {
-		return new Property(uid, name);
+	if( property ) {
+		return property;
 	}
-	return property;
-}
+	return new Property(uid, name);
+};
 
 Property.prototype.getUID = function () {
 	return this.uid;
-}
+};
 
 Property.prototype.addParent = function(property) {
 	this.parent.push( property );
+	property.children.push( this );
 	return this;
-}
+};
 
 function Spec(property, value) {
 	this.property = property;
@@ -187,25 +265,25 @@ function Spec(property, value) {
 
 Spec.prototype.getValue = function () {
 	return this.value;
-}
+};
 
 Spec.prototype.setValue = function (value) {
 	this.value = value;
 	return this;
-}
+};
 
 Spec.prototype.getProperty = function () {
 	return this.property;
-}
+};
 
 Spec.prototype.setItem = function (item) {
 	this.item = item;
 	return this;
-}
+};
 
 Spec.prototype.getItem = function () {
 	return this.item;
-}
+};
 
 /**
  * @param string item item_uid

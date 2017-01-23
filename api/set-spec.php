@@ -53,7 +53,7 @@ $api = function($item, $property, $value) use (& $msg, & $can) {
 		// Insert as a new specification
 
 		// Has permission to insert a new specification?
-		$can = Spec::canEditAll();
+		$can = Spec::canInsert();
 		if( ! $can ) {
 			$msg = 'cannot-insert';
 			return false;
